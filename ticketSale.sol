@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.17;
 
-contract TicketSale {
+contract ticketSale {
     address manager;
 
     struct ticketInfo {
