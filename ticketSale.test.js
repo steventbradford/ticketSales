@@ -11,16 +11,24 @@ let ticketSale;
 
 beforeEach(async () => {
     accounts = await web3.eth.getAccounts();
+    try {
     ticketSale = await new web3.eth.Contract(abi)
         .deploy({
          data: bytecode,
-         arguments: ["100000", "20"],
+         arguments: ["100000", "20000000000"],
          })
-        .send({ from: accounts[0],gasPrice: '8000000000', gas: '4700000' });
+        .send({ from: accounts[0],gasPrice: '80000000', gas: '50000000' });
+        }
+        catch (error) {
+            console.error("Deployment error", error);
+        
+        }
 });
 
 describe('ticketSale', () => {
     it('should allow a user to buy a ticket', async () => {
+      await ticketSale.connect(accounts).buyTicket({ value : 100 });
+      await expect(ticketSale.connect(address).buyTicket({ value : 100 })).to.be.revertedWith("you already have a ticket");
         await ticketSale.methods.buyTicket(1).send({ from: accounts[1], value: web3.utils.toWei('0.01', 'ether') });
         const ticketOwner = await ticketSale.methods.getTicketOf(accounts[1]).call();
         assert.ok(ticketOwner, '1');
@@ -80,4 +88,4 @@ describe('ticketSale', () => {
         assert.strictEqual(ticketOwner, '1');
     });
     
-});
+})
