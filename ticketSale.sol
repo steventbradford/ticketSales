@@ -1,128 +1,115 @@
-// SPDX-License-Identifier: GPL-3.0
-
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-contract ticketSale {
-    address manager;
+contract TicketSale {
+    address public manager;
 
-    struct ticketInfo {
+    struct Ticket {
         address owner;
-        uint id;
-        int price;
-    }
-   
-    struct swapInfo {
-        address owner;
-        uint id;
-    }
-
-    struct resaleInfo {
-        address owner;
-        uint id;
         uint price;
     }
 
-    ticketInfo[] public tickets;
-    swapInfo[] public swapList;
-    resaleInfo[] public resaleList;
-
-    constructor(uint numTickets, uint price) {
-        for (uint i = 0; i < numTickets; i++) {
-            tickets.push(ticketInfo(msg.sender, i + 1, int(price)));
-        }
-        manager = msg.sender;      
+    struct Resale {
+        address seller;
+        uint price;
     }
 
-    function buyTicket(uint ticketId) public payable {
-        for (uint i = 0; i < tickets.length; i++) {
-            if ((tickets[i].id == ticketId) && (tickets[i].owner == manager) && (getTicketOf(msg.sender) == 0)) {
-                require(int(msg.value) >= tickets[i].price, "out of balance");
-                (bool sent, ) = manager.call{value: uint(tickets[i].price)}("");
-                require(sent, "Failed to send Ether");  
-                tickets[i].owner = msg.sender;  
+    mapping(uint => Ticket) public tickets;
+    mapping(address => uint) public ownedTickets; // Maps address to ticket ID
+    mapping(uint => Resale) public resaleList; // Maps ticket ID to resale information
+    uint public numTickets;
+
+    constructor(uint _numTickets, uint _price) {
+        manager = msg.sender;
+        numTickets = _numTickets;
+        for (uint i = 1; i <= numTickets; i++) {
+            tickets[i] = Ticket(msg.sender, _price);
+        }
+    }
+
+    // Buy a ticket
+    function buyTicket(uint ticketId) external payable {
+        Ticket storage ticket = tickets[ticketId];
+        require(ticket.owner == manager, "Ticket not for sale");
+        require(ownedTickets[msg.sender] == 0, "Already own a ticket");
+        require(msg.value >= uint(ticket.price), "Insufficient funds");
+
+        // Transfer funds
+        (bool sent, ) = manager.call{value: uint(ticket.price)}("");
+        require(sent, "Payment failed");
+
+        // Update ownership
+        ticket.owner = msg.sender;
+        ownedTickets[msg.sender] = ticketId;
+    }
+
+    // Offer a swap
+    function offerSwap(uint ticketId) external {
+        require(ownedTickets[msg.sender] == ticketId, "You do not own this ticket");
+        delete resaleList[ticketId];  // Ensure it is not in resale
+    }
+
+    // Accept a swap (simplified)
+    function acceptSwap(uint ticketId) external {
+        uint userTicketId = ownedTickets[msg.sender];
+        require(userTicketId != 0, "You do not own a ticket");
+        require(userTicketId != ticketId, "Cannot swap with yourself");
+
+        // Swap ownership between two users
+        address otherOwner = tickets[ticketId].owner;
+        tickets[userTicketId].owner = otherOwner;
+        tickets[ticketId].owner = msg.sender;
+        ownedTickets[msg.sender] = ticketId;
+        ownedTickets[otherOwner] = userTicketId;
+    }
+
+    // Resale a ticket
+    function resaleTicket(uint ticketId, uint price) external {
+        require(ownedTickets[msg.sender] == ticketId, "You do not own this ticket");
+        resaleList[ticketId] = Resale(msg.sender, price);
+    }
+
+    // Accept a resale
+    function acceptResale(uint ticketId) external payable {
+        Resale storage resale = resaleList[ticketId];
+        require(resale.seller != address(0), "Ticket not for resale");
+        require(ownedTickets[msg.sender] == 0, "You already own a ticket");
+        require(msg.value >= resale.price, "Insufficient funds");
+
+        // Transfer funds
+        uint serviceFee = resale.price / 10;
+        uint sellerAmount = resale.price - serviceFee;
+        
+        (bool sent, ) = manager.call{value: serviceFee}("");
+        require(sent, "Failed to pay service fee");
+
+        (sent, ) = payable(resale.seller).call{value: sellerAmount}("");
+        require(sent, "Failed to pay seller");
+
+        // Update ownership
+        tickets[ticketId].owner = msg.sender;
+        ownedTickets[msg.sender] = ticketId;
+        delete resaleList[ticketId]; // Remove resale listing
+    }
+
+    // Check all resale tickets
+    function checkResale() external view returns (uint[] memory ticketIds, uint[] memory prices) {
+        uint count = 0;
+        for (uint i = 1; i <= numTickets; i++) {
+            if (resaleList[i].seller != address(0)) {
+                count++;
             }
         }
-    }
 
-    function getTicketOf(address person) public view returns (uint) {
-        for (uint i = 0; i < tickets.length; i++) {
-            if (person == tickets[i].owner) {
-                return tickets[i].id;
-            }
-        }
-        return 0;
-    }
-
-    function offerSwap(uint ticketId) public {
-        swapInfo memory swap;
-        swap = swapInfo(msg.sender, ticketId);
-        swapList.push(swap);
-    }
-
-    function acceptSwap(uint ticketId) public {
-        for (uint i = 0; i < swapList.length; i++) {
-            if ((swapList[i].id == ticketId) && swapList[i].id == getTicketOf(msg.sender)) {
-                require(getTicketOf(swapList[i].owner) != 0, "Sender of swap has no ticket!");
-
-                for (uint j = 0; j < tickets.length; j++) {
-                    if (tickets[j].owner == msg.sender) {
-                        tickets[j].owner = swapList[i].owner;
-                    } else if (tickets[j].owner == swapList[i].owner) {
-                        tickets[j].owner = msg.sender;
-                    }
-                }
-
-                for (uint k = i; k < swapList.length - 1; k++) {
-                    swapList[k] = swapList[k + 1];
-                }
-                swapList.pop();
-            }
-        }
-    }
-
-    function resaleTicket(uint price) public {
-        require(getTicketOf(msg.sender) != 0, "Sender does not own a ticket!");
-        resaleInfo memory resale;
-        resale = resaleInfo(msg.sender, getTicketOf(msg.sender), price);
-        resaleList.push(resale);  
-    }
-
-    function acceptResale(uint ticketId) public payable {
-        for (uint i = 0; i < resaleList.length; i++) {
-            if (resaleList[i].id == ticketId) {
-                require(getTicketOf(msg.sender) == 0, "Buyer of resale has a ticket!");
-                require(msg.value >= resaleList[i].price, "out of balance");
-
-                (bool sent, ) = manager.call{value: uint(resaleList[i].price)}("");
-                require(sent, "Failed to send Ether");
-
-                uint returnAmount = (uint(resaleList[i].price) / 10) * 9;
-                uint serviceFee = (uint(resaleList[i].price) / 10);
-                payable(manager).transfer(serviceFee);
-                payable(resaleList[i].owner).transfer(returnAmount);
-
-                for (uint j = 0; j < resaleList.length; j++) {
-                    if (resaleList[i].owner == tickets[j].owner) {
-                        tickets[j].owner = msg.sender;
-                    }
-                }
-
-                for (uint k = i; k < resaleList.length - 1; k++) {
-                    resaleList[k] = resaleList[k + 1];
-                }
-                resaleList.pop();
-            }
-        }
-    }
-
-    function checkResale() public view returns (uint[] memory) {
-        uint[] memory returnData = new uint[](resaleList.length * 2);
+        ticketIds = new uint[](count);
+        prices = new uint[](count);
         uint index = 0;
-        for (uint i = 0; i < resaleList.length; i++) {
-            returnData[index] = resaleList[i].id;
-            returnData[index + 1] = uint(resaleList[i].price);
-            index += 2;
+        for (uint i = 1; i <= numTickets; i++) {
+            if (resaleList[i].seller != address(0)) {
+                ticketIds[index] = i;
+                prices[index] = resaleList[i].price;
+                index++;
+            }
         }
-        return returnData;
     }
 }
