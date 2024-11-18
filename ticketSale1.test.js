@@ -2,7 +2,7 @@ const Web3 = require('web3');
 const assert = require('assert');
 const ganache = require('ganache-cli');
 const web3 = new Web3(ganache.provider());
-const { abi, evm } = require('../compile');  // Adjust path to your compiled contract's ABI and Bytecode
+const { abi, bytecode } = require('../compile');  // Adjust path to your compiled contract's ABI and Bytecode
 
 let accounts;
 let ticketSale;
@@ -13,7 +13,7 @@ beforeEach(async () => {
         // Deploy contract with 8 tickets and price 100 (for example)
         ticketSale = await new web3.eth.Contract(abi)
             .deploy({
-                data: evm.bytecode.object,  // Assuming this is the correct bytecode object
+                data: bytecode,  // Assuming this is the correct bytecode object
                 arguments: ["8", "100"],    // 8 tickets with a price of 100 (in wei)
             })
             .send({ from: accounts[0], gas: '4700000', gasPrice: '8000000000' });
