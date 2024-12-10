@@ -144,82 +144,86 @@ class App extends React.Component {
 
     render() {
         return (
-            <div>
+            <div style={styles.container}>
                 <h2>TicketSale Contract</h2>
-                <div>
+                <div style={styles.ticketList}>
                     {this.state.tickets.length === 0 ? (
                         <p>No tickets available.</p>
                     ) : (
                         this.state.tickets.map((ticket, index) => (
-                            <div key={index}>
+                            <div key={index} style={styles.ticketCard}>
                                 <p>ID: {ticket.id}</p>
-                                <p>Price: {ticket.price} ETH</p> {/* Display the price in Ether */}
+                                <p>Price: {ticket.price} ETH</p>
                                 <hr />
                             </div>
                         ))
                     )}
                 </div>
 
-                <form onSubmit={this.handleSubmitBuyTicket}>
+                <form onSubmit={this.handleSubmitBuyTicket} style={styles.form}>
                     <h4>Buy Ticket</h4>
                     <div>
                         <label>Enter Ticket ID </label>
                         <input
                             placeholder="Enter ID"
                             onChange={this.handleChangeId}
+                            style={styles.input}
                         />
                     </div>
                     <div>
-                        <button name="buyTicket">Buy a Ticket</button>
+                        <button name="buyTicket" style={styles.button}>Buy a Ticket</button>
                     </div>
                 </form>
 
-                <form onSubmit={this.handleSubmitOfferSwap}>
+                <form onSubmit={this.handleSubmitOfferSwap} style={styles.form}>
                     <h4>Offer Swap</h4>
                     <div>
                         <label>Enter Ticket ID </label>
                         <input
                             placeholder="Enter ID"
                             onChange={this.handleChangeId}
+                            style={styles.input}
                         />
                     </div>
                     <div>
-                        <button name="offerSwap">Offer Swap</button>
+                        <button name="offerSwap" style={styles.button}>Offer Swap</button>
                     </div>
                 </form>
 
-                <form onSubmit={this.handleSubmitAcceptOffer}>
+                <form onSubmit={this.handleSubmitAcceptOffer} style={styles.form}>
                     <h4>Accept Offer</h4>
                     <div>
                         <label>Enter Ticket ID </label>
                         <input
                             placeholder="Enter ID"
                             onChange={this.handleChangeId}
+                            style={styles.input}
                         />
                     </div>
                     <div>
-                        <button name="acceptSwap">Accept Swap</button>
+                        <button name="acceptSwap" style={styles.button}>Accept Swap</button>
                     </div>
                 </form>
 
-                <form onSubmit={this.handleSubmitGetTicketOf}>
+                <form onSubmit={this.handleSubmitGetTicketOf} style={styles.form}>
                     <h4>Get Ticket Number</h4>
                     <div>
                         <label>Enter Address </label>
                         <input
                             placeholder="Enter Address"
                             onChange={this.handleChangeAddress}
+                            style={styles.input}
                         />
                     </div>
                     <div>
-                        <button name="getTicketOf">Get Ticket Number</button>
+                        <button name="getTicketOf" style={styles.button}>Get Ticket Number</button>
                     </div>
                 </form>
 
-                <form onSubmit={this.handleSubmitRefundTicket}>
+                <form onSubmit={this.handleSubmitRefundTicket} style={styles.form}>
                     <h4>Refund Ticket</h4>
                     <div>
-                        <button name="refundTicket">Refund Ticket</button>
+                        <button name="refundTicket" style={styles.button}>Refund Ticket</button>
                     </div>
                 </form>
 
@@ -228,5 +232,43 @@ class App extends React.Component {
         );
     }
 }
+
+const styles = {
+    container: {
+        padding: '20px',
+        textAlign: 'center',
+    },
+    ticketList: {
+        marginTop: '20px',
+        marginBottom: '30px',
+    },
+    ticketCard: {
+        backgroundColor: '#f8f9fa',
+        padding: '10px',
+        borderRadius: '5px',
+        margin: '10px 0',
+    },
+    form: {
+        marginBottom: '20px',
+    },
+    input: {
+        padding: '10px',
+        fontSize: '16px',
+        borderRadius: '4px',
+        border: '1px solid #ccc',
+        width: '200px',
+        marginBottom: '10px',
+    },
+    button: {
+        padding: '10px',
+        fontSize: '16px',
+        color: '#fff',
+        backgroundColor: '#007bff',
+        border: 'none',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        marginTop: '10px',
+    },
+};
 
 export default App;
