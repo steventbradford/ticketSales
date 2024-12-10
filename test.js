@@ -1,6 +1,6 @@
 import React from 'react';
 import './App.css';
-import ticketsale from './ticketsale';  // Make sure this imports the correct ABI
+import ticketsale from './ticketSale';  // Make sure this imports the correct ABI
 import Web3 from 'web3';
 
 const web3 = new Web3(window.ethereum);
@@ -20,16 +20,16 @@ class App extends React.Component {
 
     async componentDidMount() {
         try {
-            const ticketsCount = 3;  // Update this value with dynamic count if needed
+            const ticketsCount = 3; 
             const allTickets = [];
             for (let i = 0; i < ticketsCount; i++) {
                 try {
                     const ticket = await ticketsale.methods.tickets(i).call();
                     console.log(`Ticket ${i}:`, ticket);
-                    // Assuming ticket[2] is the price, and it's in Wei
+                    
                     allTickets.push({
-                        id: ticket[1].toString(),  // Assuming ticket[1] holds the ticket ID
-                        price: web3.utils.fromWei(ticket[2].toString(), 'ether'),  // Convert Wei to Ether for readability
+                        id: ticket[1].toString(), 
+                        price: web3.utils.fromWei(ticket[2].toString(), 'ether'), 
                     });
                 } catch (err) {
                     console.error(`Error fetching ticket ${i}:`, err);
@@ -62,7 +62,7 @@ class App extends React.Component {
         try {
             await ticketsale.methods.buyTicket(id).send({
                 from: accounts[0],
-                value: web3.utils.toWei(price, 'ether'),  // Convert price back to Wei when sending the transaction
+                value: web3.utils.toWei(price, 'ether'),  
             });
         } catch (error) {
             alert("Ticket ID is not valid or you do not have enough funds!");
@@ -100,7 +100,7 @@ class App extends React.Component {
             await ticketsale.methods.resaleTicket(priceInWei).send({
                 from: accounts[0],
             });
-            // Assuming this method is to accept a resale offer
+           
             await ticketsale.methods.acceptResale().send({
                 from: accounts[0],
             });
